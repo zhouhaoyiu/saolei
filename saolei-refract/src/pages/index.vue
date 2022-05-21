@@ -1,0 +1,134 @@
+<script setup lang="ts">
+import type { BlockState } from '~/types'
+
+const WIDTH = 5
+const HEIGHT = 5
+
+/**
+ * 初始化游戏
+ * @param {number} state 初始化的状态
+ * @Type {BlockState[]}
+ * BlockState: 每个块的状态
+ */
+const state = ref(
+  Array.from({ length: HEIGHT }, (_, y) =>
+    Array.from({ length: WIDTH }, (_, x): BlockState => ({
+      x, y, adjacentMines: 0, revealed: false,
+    }),
+    ),
+  ),
+)
+
+// 随机生成雷的位置
+function generateMines(initial: BlockState): void {
+  for (const row of state.value) {
+    for (const block of row) {
+      if (Math.abs(initial.x - block.x) <= 1)
+        continue
+      if (Math.abs(initial.y - block.y) <= 1)
+        continue
+      block.mine = Math.random() < 0.3
+    }
+  }
+  updateNumbers()
+}
+
+// 计算邻近的雷数
+const directions = [
+  [-1, -1], [-1, 0], [-1, 1],
+  [0, -1], [0, 1],
+  [1, -1], [1, 0], [1, 1],
+]
+
+// 更新邻近的雷数
+// 如果是雷，则不需要更新
+// sibling: 同一行的块
+function updateNumbers(): void {
+  state.value.forEach((raw, y) => {
+    raw.forEach((block, x) => {
+      if (block.mine)
+        return
+      getSiblings(block).forEach((sibling) => {
+        if (sibling.mine)
+          block.adjacentMines += 1
+      })
+    })
+  })
+}
+
+function expendZero(block: BlockState) {
+  if (block.adjacentMines)
+    return
+
+  getSiblings(block).forEach((sibling) => {
+    if (!sibling.revealed) {
+      sibling.revealed = true
+      expendZero(sibling)
+    }
+  })
+}
+
+let mineGenerated = false // 是否已经生成雷
+const DEV = false // 是否是开发模式
+
+function onRightClick(block: BlockState) {
+  if (block.revealed)
+    return
+  block.flagged = !block.flagged
+  checkGameState()
+}
+
+function onClick(block: BlockState): void {
+  if (!mineGenerated) {
+    generateMines(block)
+    mineGenerated = true
+  }
+  block.revealed = true
+  if (block.mine)
+    alert('游戏结束')
+  expendZero(block)
+  checkGameState()
+}
+
+// 获取邻近的块
+function getSiblings(block: BlockState): BlockState[] {
+  return directions.map(([dx, dy]) => {
+    const nx = block.x + dx
+    const ny = block.y + dy
+    if (nx < 0 || nx >= WIDTH || ny < 0 || ny >= HEIGHT)
+      return undefined
+    return state.value[ny][nx]
+  }).filter(Boolean) as BlockState[]
+}
+
+function checkGameState() {
+  if (!mineGenerated)
+    return
+  const blocks = state.value.flat()
+
+  if (blocks.every(block => block.revealed || block.flagged)) {
+    if (blocks.some(block => !block.mine && block.flagged))
+      alert('you cheat')
+    else
+      alert('游戏胜利')
+  }
+}
+</script>
+
+<template>
+  <div p6 text-3xl>
+    扫雷
+  </div>
+  <div p6>
+    <div v-for="row, y in state" :key="y" flex="~" items-center justify-center>
+      <MyBlock
+        v-for="block, x in row" :key="x"
+        :block="block"
+        @click="onClick(block)"
+        @contextmenu.prevent="onRightClick(block)"
+      >
+        />
+      </myblock>
+    </div>
+  </div>
+</template>
