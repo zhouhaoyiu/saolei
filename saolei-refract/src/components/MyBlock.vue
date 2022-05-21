@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BlockState } from '~/types'
+import { isDev } from '~/composables'
 defineProps<{ block: BlockState }>()
 
 const numberColors = [
@@ -26,13 +27,13 @@ function getBlockClass(block: BlockState) {
 
 <template>
   <button
-    flex="~ gap-1" m="0.5" items-center justify-center w-10 h-10
-    border="1 gray-400/10" :class="getBlockClass(block)"
+    flex="~ gap-1" m="0.5" items-center justify-center w-10 h-10 border="1 gray-400/10"
+    :class="getBlockClass(block)"
   >
     <template v-if="block.flagged">
       🚩
     </template>
-    <template v-else-if="block.revealed || DEV">
+    <template v-else-if="block.revealed || isDev">
       <div v-if="block.mine">
         💣
       </div>
