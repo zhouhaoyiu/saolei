@@ -3,6 +3,7 @@ import { isDev, toggleDev } from '~/composables'
 import { GamePlay } from '~/composables/logic'
 
 const play = new GamePlay(10, 10)
+useStorage('play', play.state)
 const state = computed(() => play.board)
 </script>
 

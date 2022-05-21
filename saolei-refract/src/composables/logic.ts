@@ -19,9 +19,6 @@ interface GameState {
 }
 export class GamePlay {
   state = ref() as Ref<GameState>
-  // state = ref<BlockState[][]>([])
-  // mineGenerated = false // 是否已经生成雷
-  // gameState = ref<'playing' | 'won' | 'lost'>('playing') // 游戏状态
 
   constructor(public width: number, public height: number) {
     if (!width || !height)
@@ -52,6 +49,7 @@ export class GamePlay {
     }
   }
 
+  // 生成雷
   generateMines(state: BlockState[][], initial: BlockState): void {
     for (const row of state) {
       for (const block of row) {
@@ -113,12 +111,15 @@ export class GamePlay {
     block.revealed = true
     if (block.mine) {
       this.state.value.gameState = 'lost'
+
       this.board.forEach((raw) => {
         raw.forEach((block) => {
           if (block.mine)
             block.revealed = true
         })
       })
+      alert('BOMB!!! 游戏失败')
+      this.reset()
     }
     this.expendZero(block)
     this.checkGameState()
@@ -146,9 +147,14 @@ export class GamePlay {
     // 检查是否所有的块都已经被揭开
     if (blocks.every(block => block.revealed || block.flagged)) {
       // 如果存在未揭开且被标记的雷，则游戏失败
-      if (blocks.some(block => !block.mine && block.flagged))
+      if (blocks.some(block => !block.mine && block.flagged)) {
+        alert('游戏失败')
         this.state.value.gameState = 'lost'
-      else this.state.value.gameState = 'won'
+      }
+      else {
+        alert('游戏胜利')
+        this.state.value.gameState = 'won'
+      }
     }
   }
 }
