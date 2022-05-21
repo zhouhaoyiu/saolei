@@ -13,6 +13,7 @@ const HEIGHT = 10
  */
 const state = ref<BlockState[][]>([])
 
+// 重置游戏
 function reset() {
   state.value = Array.from({ length: HEIGHT }, (_, y) =>
     Array.from({ length: WIDTH }, (_, x): BlockState => ({
@@ -59,6 +60,7 @@ function updateNumbers(state: BlockState[][]): void {
   })
 }
 
+// 当相邻的快都没有雷时, 将其状态全部改为已翻开
 function expendZero(block: BlockState) {
   if (block.adjacentMines)
     return
@@ -73,6 +75,7 @@ function expendZero(block: BlockState) {
 
 let mineGenerated = false // 是否已经生成雷
 
+// 邮件设置标记
 function onRightClick(block: BlockState) {
   if (block.revealed)
     return
@@ -86,8 +89,17 @@ function onClick(block: BlockState): void {
     mineGenerated = true
   }
   block.revealed = true
-  if (block.mine)
-    alert('游戏结束')
+  if (block.mine) {
+    state.value.forEach((raw) => {
+      raw.forEach((block) => {
+        if (block.mine)
+          block.revealed = true
+      })
+    })
+    alert('BOMB!!! 游戏失败')
+    reset()
+    return
+  }
   expendZero(block)
   checkGameState()
 }
@@ -110,21 +122,17 @@ function checkGameState() {
 
   if (blocks.every(block => block.revealed || block.flagged)) {
     if (blocks.some(block => !block.mine && block.flagged))
-      alert('you cheat')
+      alert('you cheat!!! 游戏失败')
     else
       alert('游戏胜利')
   }
 }
-
 reset()
 </script>
 
 <template>
   <div p6 text-3xl>
     扫雷
-    <button @click="toggleDev()">
-      {{ isDev }}
-    </button>
   </div>
   <div p6>
     <div v-for="row, y in state" :key="y" flex="~" items-center justify-center>
@@ -133,9 +141,15 @@ reset()
         :block="block"
         @click="onClick(block)"
         @contextmenu.prevent="onRightClick(block)"
-      >
-        />
-      </myblock>
+      />
     </div>
+  </div>
+  <div flex="~ gap-1" justify-center>
+    <button btn @click="toggleDev()">
+      {{ isDev ? 'DEV' : 'NORMAL' }}
+    </button>
+    <button btn @click="reset()">
+      RESET
+    </button>
   </div>
 </template>

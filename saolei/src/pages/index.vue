@@ -133,6 +133,7 @@ function getSiblings(block: BlockState): BlockState[] {
   }).filter(Boolean) as BlockState[]
 }
 
+// 检查游戏状态
 function checkGameState() {
   if (!mineGenerated)
     return
@@ -140,7 +141,7 @@ function checkGameState() {
 
   if (blocks.every(block => block.revealed || block.flagged)) {
     if (blocks.some(block => !block.mine && block.flagged))
-      alert('you cheat')
+      alert('you cheat!!! 游戏失败')
     else
       alert('游戏胜利')
   }

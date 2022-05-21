@@ -120,6 +120,7 @@ export class GamePlay {
       })
       alert('BOMB!!! 游戏失败')
       this.reset()
+      return
     }
     this.expendZero(block)
     this.checkGameState()
