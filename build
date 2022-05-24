@@ -1,0 +1,21 @@
+#!/bin/bash
+
+## 获得当前文件夹下的子文件夹
+sub_dirs=`ls -l | grep "^d" | awk '{print $NF}'`
+#文字为大字号
+echo -e "\033[1mdirs:\n$sub_dirs \033[0m"
+echo '-------------------------------------'
+msg=''
+
+## 在每个文件夹下执行pnpm build
+for dir in $sub_dirs
+do
+  cd $dir
+  pnpm run build
+  cd ..
+  msg+="\033[31mSTATUS:$dir build success !!!\033[0m\n"
+done
+
+reset
+echo -e $msg
+
