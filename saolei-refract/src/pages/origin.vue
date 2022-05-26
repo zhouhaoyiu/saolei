@@ -2,6 +2,8 @@
 import type { BlockState } from '~/types'
 import { isDev, toggleDev } from '~/composables'
 
+reset()
+
 const WIDTH = 10
 const HEIGHT = 10
 
@@ -14,7 +16,7 @@ const HEIGHT = 10
 const state = ref<BlockState[][]>([])
 
 // 重置游戏
-function reset() {
+function reset(): void {
   state.value = Array.from({ length: HEIGHT }, (_, y) =>
     Array.from({ length: WIDTH }, (_, x): BlockState => ({
       x, y, adjacentMines: 0, revealed: false,
@@ -127,7 +129,6 @@ function checkGameState() {
       alert('游戏胜利')
   }
 }
-reset()
 </script>
 
 <template>

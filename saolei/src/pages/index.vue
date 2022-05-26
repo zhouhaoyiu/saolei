@@ -146,7 +146,7 @@ function checkGameState() {
       alert('游戏胜利')
   }
 }
-</script>
+</script>c:\Users\Administrator\Desktop\saolei\saolei-refract
 
 <template>
   <div p6 text-3xl>
