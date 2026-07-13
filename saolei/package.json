@@ -4,8 +4,8 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite --port 3333 --open",
-    "lint": "eslint .",
-    "typecheck": "vue-tsc --noEmit",
+    "lint": "oxlint --deny typescript/no-explicit-any .",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "test": "vitest"
   },
@@ -15,28 +15,19 @@
     "vue-router": "^5.1.0"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^9.1.0",
     "@iconify-json/carbon": "^1.2.24",
     "@types/node": "^26.1.1",
     "@unocss/reset": "^66.7.5",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vue/test-utils": "^2.4.11",
-    "eslint": "^10.6.0",
     "jsdom": "^29.1.1",
-    "typescript": "^6.0.3",
+    "oxlint": "1.73.0",
+    "typescript": "^7.0.2",
     "unocss": "^66.7.5",
     "unplugin-auto-import": "^21.0.0",
     "unplugin-vue-components": "^32.1.0",
     "vite": "^8.1.4",
     "vite-plugin-pages": "^0.33.3",
-    "vitest": "^4.1.10",
-    "vue-tsc": "^3.3.7"
-  },
-  "eslintConfig": {
-    "extends": "@antfu",
-    "rules": {
-      "no-console": "off",
-      "no-alert": "off"
-    }
+    "vitest": "^4.1.10"
   }
 }
