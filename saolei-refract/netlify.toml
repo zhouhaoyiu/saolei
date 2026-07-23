@@ -1,10 +1,10 @@
 [build.environment]
   NPM_FLAGS = "--version"
-  NODE_VERSION = "16"
+  NODE_VERSION = "22"
 
 [build]
   publish = "dist"
-  command = "npx pnpm i --store=node_modules/.pnpm-store && npx pnpm run build"
+  command = "npx --yes pnpm@11.15.1 i --store=node_modules/.pnpm-store && npx --yes pnpm@11.15.1 run build"
 
 [[redirects]]
   from = "/*"
