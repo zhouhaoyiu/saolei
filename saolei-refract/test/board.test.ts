@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
+
+enableAutoUnmount(afterEach)
 import Board from '../src/pages/origin.vue'
 
 beforeEach(() => {
@@ -7,6 +9,7 @@ beforeEach(() => {
   vi.spyOn(Math, 'random').mockReturnValue(0)
 })
 afterEach(() => {
+  vi.useRealTimers()
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })
@@ -14,7 +17,7 @@ afterEach(() => {
 function board() {
   const wrapper = mount(Board)
   // Select cell buttons independently of the root-level toolbar.
-  const cells = wrapper.findAll('button[border]')
+  const cells = wrapper.findAll('button[data-cell]')
   return { wrapper, cells }
 }
 
@@ -40,7 +43,7 @@ describe('public board behavior', () => {
     await cells[0].trigger('click')
     await cells[22].trigger('contextmenu')
     await cells[22].trigger('click')
-    expect(cells[22].text()).toBe('🚩')
+    expect(cells[22].attributes('data-state')).toBe('flagged')
     expect(alert).not.toHaveBeenCalled()
     await cells[22].trigger('contextmenu')
     await cells[22].trigger('click')
@@ -52,7 +55,7 @@ describe('public board behavior', () => {
     const { wrapper, cells } = board()
     await cells[11].trigger('contextmenu')
     await cells[0].trigger('click')
-    expect(cells[11].text()).toBe('🚩')
+    expect(cells[11].attributes('data-state')).toBe('flagged')
     await cells[11].trigger('contextmenu')
     expect(cells[11].text()).toBe('')
     await cells[11].trigger('click')
@@ -71,23 +74,56 @@ describe('public board behavior', () => {
     expect(alert).toHaveBeenCalledExactlyOnceWith('游戏胜利')
     await cells[22].trigger('click')
     await cells[22].trigger('contextmenu')
-    expect(cells[22].text()).toBe('🚩')
+    expect(cells[22].attributes('data-state')).toBe('flagged')
     expect(alert).toHaveBeenCalledTimes(1)
     wrapper.unmount()
   })
 
-  it('starts a fresh game through RESET', async () => {
+  it('starts a fresh game through the new-game button', async () => {
     const { wrapper, cells } = board()
     await cells[0].trigger('click')
     await cells[22].trigger('click')
-    const reset = wrapper.findAll('button').find(button => button.text() === 'RESET')
+    const reset = wrapper.findAll('button').find(button => button.text() === '新的一局')
     expect(reset).toBeDefined()
     await reset!.trigger('click')
-    const freshCells = wrapper.findAll('button[border]')
+    const freshCells = wrapper.findAll('button[data-cell]')
     expect(freshCells.every(cell => cell.text() === '')).toBe(true)
     await freshCells[0].trigger('click')
     expect(freshCells[0].text()).toBe('0')
     expect(freshCells[22].text()).toBe('')
     wrapper.unmount()
   })
+
+  it('supports the touch flag mode without revealing the marked cell', async () => {
+    const { wrapper, cells } = board()
+    const flagMode = wrapper.findAll('button').find(button => button.text() === '插旗')!
+    const revealMode = wrapper.findAll('button').find(button => button.text() === '揭开')!
+    await flagMode.trigger('click')
+    expect(flagMode.attributes('aria-pressed')).toBe('true')
+    await cells[0].trigger('click')
+    expect(cells[0].attributes('data-state')).toBe('flagged')
+    expect(wrapper.find('[data-counter="flags"]').text()).toContain('01')
+    await revealMode.trigger('click')
+    await cells[0].trigger('click')
+    expect(cells[0].attributes('data-state')).toBe('flagged')
+    expect(alert).not.toHaveBeenCalled()
+  })
+
+  it('runs the clock only during active play and resets it for a new game', async () => {
+    vi.useFakeTimers()
+    const { wrapper, cells } = board()
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(wrapper.find('[data-counter="time"]').text()).toBe('00:00')
+    await cells[0].trigger('click')
+    await vi.advanceTimersByTimeAsync(3000)
+    expect(wrapper.find('[data-counter="time"]').text()).toBe('00:03')
+    await cells[22].trigger('click')
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(wrapper.find('[data-counter="time"]').text()).toBe('00:03')
+    await wrapper.findAll('button').find(button => button.text() === '新的一局')!.trigger('click')
+    expect(wrapper.find('[data-counter="time"]').text()).toBe('00:00')
+    wrapper.unmount()
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
 })

@@ -1,2 +1,2 @@
-export const isDark = useDark()
+export const isDark = useDark({ initialValue: 'dark' })
 export const toggleDark = useToggle(isDark)

@@ -1,45 +1,26 @@
 <script setup lang="ts">
 import type { BlockState } from '~/types'
-import { isDev } from '~/composables'
-defineProps<{ block: BlockState }>()
+import GameIcon from './GameIcon.vue'
 
-const numberColors = [
-  'text-transparent',
-  'text-blue-500',
-  'text-green-500',
-  'text-yellow-500',
-  'text-orange-500',
-  'text-red-500',
-  'text-purple-500',
-  'text-pink-500',
-  'text-teal-500',
-]
-// 根据状态渲染块的样式
-function getBlockClass(block: BlockState) {
-  if (block.flagged)
-    return 'bg-gray-500/10'
-  if (!block.revealed)
-    return 'bg-gray-500/10  hover:bg-gray-500/20'
-
-  return block.mine ? 'bg-red-500/50' : `${numberColors[block.adjacentMines]}`
-}
+const props = withDefaults(defineProps<{ block: BlockState; preview?: boolean }>(), { preview: false })
+const cellState = computed(() => props.block.flagged ? 'flagged' : props.block.revealed ? props.block.mine ? 'mine' : 'open' : 'closed')
+const label = computed(() => {
+  const { x, y, flagged, revealed, mine, adjacentMines } = props.block
+  const state = flagged ? '已插旗' : revealed ? mine ? '地雷' : `周围 ${adjacentMines} 颗地雷` : '未揭开'
+  return `第 ${y + 1} 行，第 ${x + 1} 列，${state}`
+})
 </script>
 
 <template>
   <button
-    flex="~ gap-1" m="0.5" items-center justify-center w-10 h-10 border="1 gray-400/10"
-    :class="getBlockClass(block)"
+    type="button" class="mine-cell" data-cell
+    :class="[`number-${block.adjacentMines}`, { 'is-preview': preview && !block.revealed }]"
+    :data-state="cellState" :aria-label="label"
   >
-    <template v-if="block.flagged">
-      🚩
-    </template>
-    <template v-else-if="block.revealed || isDev">
-      <div v-if="block.mine">
-        💣
-      </div>
-      <div v-else>
-        {{ block.adjacentMines }}
-      </div>
+    <GameIcon v-if="block.flagged" name="flag" :size="19" />
+    <template v-else-if="block.revealed || preview">
+      <GameIcon v-if="block.mine" name="mine" :size="20" />
+      <span v-else aria-hidden="true">{{ block.adjacentMines }}</span>
     </template>
   </button>
 </template>

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { BlockState } from '~/types'
+import GameFrame from '~/components/GameFrame.vue'
+import MyBlock from '~/components/MyBlock.vue'
+import { useGameClock } from '~/composables/useGameClock'
 
 const WIDTH = 10
 const HEIGHT = 10
@@ -40,18 +43,6 @@ const directions = [
   [1, -1], [1, 0], [1, 1],
 ]
 
-const numberColors = [
-  'text-transparent',
-  'text-blue-500',
-  'text-green-500',
-  'text-yellow-500',
-  'text-orange-500',
-  'text-red-500',
-  'text-purple-500',
-  'text-pink-500',
-  'text-teal-500',
-]
-
 // 更新邻近的雷数
 // 如果是雷，则不需要更新
 // sibling: 同一行的块
@@ -80,37 +71,40 @@ function expendZero(block: BlockState) {
   })
 }
 
-let mineGenerated = false // 是否已经生成雷
-let gameState: 'playing' | 'won' | 'lost' = 'playing'
+const mineGenerated = ref(false) // 是否已经生成雷
+const gameState = ref<'playing' | 'won' | 'lost'>('playing')
+const flagMode = ref(false)
+const elapsed = useGameClock(() => mineGenerated.value && gameState.value === 'playing')
 
 function reset() {
-  mineGenerated = false
-  gameState = 'playing'
+  elapsed.value = 0
+  flagMode.value = false
+  mineGenerated.value = false
+  gameState.value = 'playing'
   state.value = Array.from({ length: HEIGHT }, (_, y) =>
     Array.from({ length: WIDTH }, (_, x): BlockState => ({
       x, y, adjacentMines: 0, revealed: false,
     })),
   )
 }
-const DEV = false // 是否是开发模式
 
 function onRightClick(block: BlockState) {
-  if (gameState !== 'playing' || block.revealed)
+  if (gameState.value !== 'playing' || block.revealed)
     return
   block.flagged = !block.flagged
   checkGameState()
 }
 
 function onClick(block: BlockState): void {
-  if (gameState !== 'playing' || block.flagged || block.revealed)
+  if (gameState.value !== 'playing' || block.flagged || block.revealed)
     return
-  if (!mineGenerated) {
+  if (!mineGenerated.value) {
     generateMines(block)
-    mineGenerated = true
+    mineGenerated.value = true
   }
   block.revealed = true
   if (block.mine) {
-    gameState = 'lost'
+    gameState.value = 'lost'
     window.alert('游戏结束')
     // 显示所有雷
     state.value.forEach((raw) => {
@@ -123,16 +117,6 @@ function onClick(block: BlockState): void {
   }
   expendZero(block)
   checkGameState()
-}
-
-// 根据状态渲染块的样式
-function getBlockClass(block: BlockState) {
-  if (block.flagged)
-    return 'bg-gray-500/10'
-  if (!block.revealed)
-    return 'bg-gray-500/10  hover:bg-gray-500/20'
-
-  return block.mine ? 'bg-red-500/50' : `${numberColors[block.adjacentMines]}`
 }
 
 // 获取邻近的块
@@ -148,41 +132,24 @@ function getSiblings(block: BlockState): BlockState[] {
 
 // 安全格全部揭开、雷全部标记后获胜。
 function checkGameState() {
-  if (!mineGenerated || gameState !== 'playing')
+  if (!mineGenerated.value || gameState.value !== 'playing')
     return
   if (state.value.flat().every(block => block.mine ? block.flagged : block.revealed)) {
-    gameState = 'won'
+    gameState.value = 'won'
     alert('游戏胜利')
   }
+}
+
+function onCellClick(block: BlockState) {
+  if (flagMode.value)
+    onRightClick(block)
+  else
+    onClick(block)
 }
 </script>
 
 <template>
-  <div p6 text-3xl>
-    扫雷
-  </div>
-  <div p6>
-    <div v-for="row, y in state" :key="y" flex="~" items-center justify-center>
-      <button
-        v-for="block, x in row" :key="x" flex="~ gap-1" m="0.5" items-center justify-center w-10 h-10
-        border="1 gray-400/10" :class="getBlockClass(block)" @click="onClick(block)"
-        @contextmenu.prevent="onRightClick(block)"
-      >
-        <template v-if="block.flagged">
-          🚩
-        </template>
-        <template v-else-if="block.revealed || DEV">
-          <div v-if="block.mine">
-            💣
-          </div>
-          <div v-else>
-            {{ block.adjacentMines }}
-          </div>
-        </template>
-      </button>
-    </div>
-  </div>
-  <button btn @click="reset()">
-    RESET
-  </button>
+  <GameFrame v-model:flag-mode="flagMode" :board="state" :started="mineGenerated" :outcome="gameState" :elapsed="elapsed" @reset="reset">
+    <MyBlock v-for="block in state.flat()" :key="`${block.x}-${block.y}`" :block="block" @click="onCellClick(block)" @contextmenu.prevent="onRightClick(block)" />
+  </GameFrame>
 </template>

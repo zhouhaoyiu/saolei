@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <title>Vitesse Lite</title>
-  <meta name="description" content="Opinionated Vite Starter Template">
+  <title>扫雷 · Minesweeper</title>
+  <meta name="description" content="揭开安全区域，插旗标记地雷。支持深浅配色与触屏操作。">
 </head>
-<body class="font-sans dark:text-white dark:bg-hex-121212">
+<body>
   <div id="app"></div>
   <script>
     (function () {
       const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-      const setting = localStorage.getItem('color-schema') || 'auto'
+      const setting = localStorage.getItem('color-schema') || 'dark'
       if (setting === 'dark' || (prefersDark && setting !== 'light'))
         document.documentElement.classList.toggle('dark', true)
     })()

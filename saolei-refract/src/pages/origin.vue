@@ -1,34 +1,34 @@
 <script setup lang="ts">
+import type { BlockState } from '~/types'
 import { isDev, toggleDev } from '~/composables'
 import { GamePlay } from '~/composables/logic'
+import { useGameClock } from '~/composables/useGameClock'
+import GameFrame from '~/components/GameFrame.vue'
+import MyBlock from '~/components/MyBlock.vue'
 
 const play = new GamePlay(10, 10)
+const flagMode = ref(false)
+const elapsed = useGameClock(() => play.state.value.mineGenerated && play.state.value.gameState === 'playing')
 const state = computed(() => play.board)
-const reset = () => play.reset()
-const onClick = (block: Parameters<GamePlay['onClick']>[0]) => play.onClick(block)
-const onRightClick = (block: Parameters<GamePlay['onRightClick']>[0]) => play.onRightClick(block)
+function reset() {
+  elapsed.value = 0
+  flagMode.value = false
+  play.reset()
+}
+function onCellClick(block: BlockState) {
+  if (flagMode.value)
+    play.onRightClick(block)
+  else
+    play.onClick(block)
+}
 </script>
 
 <template>
-  <div p6 text-3xl>
-    扫雷
-  </div>
-  <div p6>
-    <div v-for="row, y in state" :key="y" flex="~" items-center justify-center>
-      <MyBlock
-        v-for="block, x in row" :key="x"
-        :block="block"
-        @click="onClick(block)"
-        @contextmenu.prevent="onRightClick(block)"
-      />
-    </div>
-  </div>
-  <div flex="~ gap-1" justify-center>
-    <button btn @click="toggleDev()">
-      {{ isDev ? 'DEV' : 'NORMAL' }}
-    </button>
-    <button btn @click="reset()">
-      RESET
-    </button>
-  </div>
+  <GameFrame
+    v-model:flag-mode="flagMode" :board="state" :started="play.state.value.mineGenerated"
+    :outcome="play.state.value.gameState" :elapsed="elapsed" :preview="isDev" allow-preview
+    @reset="reset" @toggle-preview="toggleDev()"
+  >
+    <MyBlock v-for="block in state.flat()" :key="`${block.x}-${block.y}`" :block="block" :preview="isDev" @click="onCellClick(block)" @contextmenu.prevent="play.onRightClick(block)" />
+  </GameFrame>
 </template>
