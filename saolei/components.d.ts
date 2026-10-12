@@ -14,6 +14,7 @@ declare module 'vue' {
     Footer: typeof import('./src/components/Footer.vue')['default']
     GameFrame: typeof import('./src/components/GameFrame.vue')['default']
     GameIcon: typeof import('./src/components/GameIcon.vue')['default']
+    LedDisplay: typeof import('./src/components/LedDisplay.vue')['default']
     MyBlock: typeof import('./src/components/MyBlock.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
