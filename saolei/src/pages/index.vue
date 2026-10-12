@@ -1,5 +1,3 @@
-/* eslint-disable no-alert */
-
 <script setup lang="ts">
 import type { BlockState } from '~/types'
 
@@ -71,11 +69,11 @@ function updateNumbers(): void {
 }
 
 function expendZero(block: BlockState) {
-  if (block.adjacentMines)
+  if (block.mine || block.flagged || block.adjacentMines)
     return
 
   getSiblings(block).forEach((sibling) => {
-    if (!sibling.revealed) {
+    if (!sibling.revealed && !sibling.flagged && !sibling.mine) {
       sibling.revealed = true
       expendZero(sibling)
     }
@@ -83,23 +81,36 @@ function expendZero(block: BlockState) {
 }
 
 let mineGenerated = false // 是否已经生成雷
+let gameState: 'playing' | 'won' | 'lost' = 'playing'
+
+function reset() {
+  mineGenerated = false
+  gameState = 'playing'
+  state.value = Array.from({ length: HEIGHT }, (_, y) =>
+    Array.from({ length: WIDTH }, (_, x): BlockState => ({
+      x, y, adjacentMines: 0, revealed: false,
+    })),
+  )
+}
 const DEV = false // 是否是开发模式
 
 function onRightClick(block: BlockState) {
-  if (block.revealed)
+  if (gameState !== 'playing' || block.revealed)
     return
   block.flagged = !block.flagged
   checkGameState()
 }
 
-function onClick(e: MouseEvent, block: BlockState): void {
+function onClick(block: BlockState): void {
+  if (gameState !== 'playing' || block.flagged || block.revealed)
+    return
   if (!mineGenerated) {
     generateMines(block)
     mineGenerated = true
   }
   block.revealed = true
-  expendZero(block)
   if (block.mine) {
+    gameState = 'lost'
     window.alert('游戏结束')
     // 显示所有雷
     state.value.forEach((raw) => {
@@ -108,7 +119,9 @@ function onClick(e: MouseEvent, block: BlockState): void {
           block.revealed = true
       })
     })
+    return
   }
+  expendZero(block)
   checkGameState()
 }
 
@@ -133,20 +146,16 @@ function getSiblings(block: BlockState): BlockState[] {
   }).filter(Boolean) as BlockState[]
 }
 
-// 检查游戏状态
+// 安全格全部揭开、雷全部标记后获胜。
 function checkGameState() {
-  if (!mineGenerated)
+  if (!mineGenerated || gameState !== 'playing')
     return
-  const blocks = state.value.flat()
-
-  if (blocks.every(block => block.revealed || block.flagged)) {
-    if (blocks.some(block => !block.mine && block.flagged))
-      alert('you cheat!!! 游戏失败')
-    else
-      alert('游戏胜利')
+  if (state.value.flat().every(block => block.mine ? block.flagged : block.revealed)) {
+    gameState = 'won'
+    alert('游戏胜利')
   }
 }
-</script>c:\Users\Administrator\Desktop\saolei\saolei-refract
+</script>
 
 <template>
   <div p6 text-3xl>
@@ -156,7 +165,7 @@ function checkGameState() {
     <div v-for="row, y in state" :key="y" flex="~" items-center justify-center>
       <button
         v-for="block, x in row" :key="x" flex="~ gap-1" m="0.5" items-center justify-center w-10 h-10
-        border="1 gray-400/10" :class="getBlockClass(block)" @click="onClick($event, block)"
+        border="1 gray-400/10" :class="getBlockClass(block)" @click="onClick(block)"
         @contextmenu.prevent="onRightClick(block)"
       >
         <template v-if="block.flagged">
@@ -173,4 +182,7 @@ function checkGameState() {
       </button>
     </div>
   </div>
+  <button btn @click="reset()">
+    RESET
+  </button>
 </template>

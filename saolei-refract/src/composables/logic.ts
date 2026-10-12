@@ -81,11 +81,11 @@ export class GamePlay {
 
   // 扩展雷数为0的块
   expendZero(block: BlockState) {
-    if (block.adjacentMines)
+    if (block.mine || block.flagged || block.adjacentMines)
       return
 
     this.getSiblings(block).forEach((sibling) => {
-      if (!sibling.revealed) {
+      if (!sibling.revealed && !sibling.flagged && !sibling.mine) {
         sibling.revealed = true
         this.expendZero(sibling)
       }
@@ -104,6 +104,8 @@ export class GamePlay {
 
   // 揭开块
   onClick(block: BlockState): void {
+    if (this.state.value.gameState !== 'playing' || block.flagged || block.revealed)
+      return
     if (!this.state.value.mineGenerated) {
       this.generateMines(this.board, block)
       this.state.value.mineGenerated = true
@@ -119,7 +121,6 @@ export class GamePlay {
         })
       })
       alert('BOMB!!! 游戏失败')
-      this.reset()
       return
     }
     this.expendZero(block)
@@ -139,23 +140,13 @@ export class GamePlay {
       .filter(Boolean) as BlockState[]
   }
 
-  // 检查游戏状态
+  // 安全格全部揭开、雷全部标记后获胜。
   checkGameState() {
-    if (!this.state.value.mineGenerated)
+    if (!this.state.value.mineGenerated || this.state.value.gameState !== 'playing')
       return
-    const blocks = this.board.flat()
-
-    // 检查是否所有的块都已经被揭开
-    if (blocks.every(block => block.revealed || block.flagged)) {
-      // 如果存在未揭开且被标记的雷，则游戏失败
-      if (blocks.some(block => !block.mine && block.flagged)) {
-        alert('游戏失败')
-        this.state.value.gameState = 'lost'
-      }
-      else {
-        alert('游戏胜利')
-        this.state.value.gameState = 'won'
-      }
+    if (this.board.flat().every(block => block.mine ? block.flagged : block.revealed)) {
+      this.state.value.gameState = 'won'
+      alert('游戏胜利')
     }
   }
 }
